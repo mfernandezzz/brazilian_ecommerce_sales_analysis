@@ -238,3 +238,21 @@ rank_clients AS (
     FROM rank_clients
     WHERE position <= 3
     ORDER BY city, position;
+
+-- Select for each type of payment, the top five products with most revenue
+WITH revenue_product_payment AS (
+    SELECT payments.payment_type AS payments, products.product_category_name AS product, SUM(payments.payment_value) AS revenue
+    FROM payments
+    INNER JOIN orders ON payments.order_id = orders.order_id
+    INNER JOIN order_items ON orders.order_id = order_items.order_id
+    INNER JOIN products ON order_items.product_id = products.product_id
+    WHERE payments.payment_type IN ('boleto', 'debit_card', 'voucher', 'credit_card') AND EXTRACT(year FROM orders.order_purchase_timestamp) = 2017
+    GROUP BY payments, product
+),
+rank_products AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY payments ORDER BY revenue DESC) AS position
+    FROM revenue_product_payment
+) SELECT payments, product, revenue, position
+    FROM rank_products
+    WHERE position <= 5
+    ORDER BY payments, position ASC;
