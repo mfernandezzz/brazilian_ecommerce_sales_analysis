@@ -138,3 +138,103 @@ INNER JOIN payments ON orders.order_id = payments.order_id
 WHERE freight_value > (SELECT AVG(freight_value) FROM order_items)
 GROUP BY product, freight_value
 ORDER BY revenue DESC;
+
+-- Payment types, products and total orders per product
+-- boleto, debit_card, voucher, credit_card
+SELECT payments.payment_type AS payment_type, products.product_category_name AS product, COUNT(orders.order_id) AS orders
+FROM payments
+INNER JOIN orders ON payments.order_id = orders.order_id
+INNER JOIN order_items ON orders.order_id = order_items.order_id
+INNER JOIN products ON order_items.product_id = products.product_id
+WHERE payment_type IN ('boleto', 'debit_card', 'voucher', 'credit_card')
+GROUP BY payment_type, product
+ORDER BY payment_type DESC;
+
+-- Get the day with more quantity of orders
+SELECT order_purchase_timestamp AS purchase_date, COUNT(orders.order_id) AS orders
+FROM orders
+GROUP BY purchase_date
+ORDER BY orders DESC
+LIMIT 5;
+
+-- The average quantity of orders by day for all the period
+SELECT COUNT(order_id) / (MAX(order_purchase_timestamp) - MIN(order_purchase_timestamp)) AS avg_orders_per_day
+FROM orders; -- 128
+
+-- The average quantity of orders by day for the year 2017
+SELECT COUNT(order_id) / (MAX(order_purchase_timestamp) - MIN(order_purchase_timestamp)) AS avg_orders_per_day
+FROM orders
+WHERE EXTRACT(year FROM order_purchase_timestamp) = 2017;
+
+-- Quantity of days with purchases during the year 2017
+SELECT COUNT(DISTINCT order_purchase_timestamp)
+FROM orders
+WHERE EXTRACT (year FROM order_purchase_timestamp) = 2017;
+
+-- Select the last 10 orders with the respective purchase date, estimated delivery date and the difference in days between the purchase date and
+-- the estimated delivery date.
+SELECT order_id AS orderr, 
+    order_purchase_timestamp AS order_date, order_estimated_delivery_date AS estimated_delivery_date,
+    (order_estimated_delivery_date - order_purchase_timestamp) AS estimated_days
+FROM orders
+GROUP BY orderr
+ORDER BY order_date DESC
+LIMIT 10;
+
+-- The products, quantity of unique orders for each product in a specific day
+SELECT products.product_category_name AS product, COUNT(DISTINCT(orders.order_id)) AS orders
+FROM products
+INNER JOIN order_items ON products.product_id = order_items.product_id
+INNER JOIN orders ON order_items.order_id = orders.order_id
+WHERE orders.order_purchase_timestamp = '2017-06-20'
+GROUP BY product
+ORDER BY orders DESC;
+
+SELECT COUNT(order_id)
+FROM orders
+WHERE order_purchase_timestamp = '2017-06-20'; --94
+
+SELECT DISTINCT(order_status), COUNT(order_id)
+FROM orders
+WHERE order_purchase_timestamp = '2017-06-20'
+GROUP BY order_status;
+
+-- All the products with more than 400 buy orders in the year 2017
+SELECT products.product_category_name AS product, COUNT(order_items.order_id) AS orders
+FROM products
+INNER JOIN order_items ON products.product_id = order_items.product_id
+INNER JOIN orders ON order_items.order_id = orders.order_id
+WHERE EXTRACT(year FROM orders.order_purchase_timestamp) = 2017
+GROUP BY product
+HAVING COUNT(order_items.order_id) > 400
+ORDER BY orders DESC;
+
+-- The quantity of orders and revenue by month for the the products cama_mesa_banho - beleza_saude - esporte_lazer in the year 2017.
+SELECT products.product_category_name AS product, 
+    EXTRACT(month FROM orders.order_purchase_timestamp) AS month, 
+    COUNT(orders.order_id) AS orders,
+    SUM(payments.payment_value) AS revenue
+FROM products
+INNER JOIN order_items ON products.product_id = order_items.product_id
+INNER JOIN orders ON order_items.order_id = orders.order_id
+INNER JOIN payments ON orders.order_id = payments.order_id
+WHERE EXTRACT(year FROM orders.order_purchase_timestamp) = 2017 AND product_category_name IN ('cama_mesa_banho', 'beleza_saude', 'esporte_lazer')
+GROUP BY product, month;
+
+-- Get the top three customers by city with high quantity of money spending in the state of RJ (Rio de Janeiro)
+WITH revenue_per_customer AS (
+    SELECT customer.customer_city AS city, customer.customer_id AS id, customer.customer_state AS state, 
+        SUM(payments.payment_value) AS revenue
+    FROM customer
+    INNER JOIN orders ON customer.customer_id = orders.customer_id
+    INNER JOIN payments ON orders.order_id = payments.order_id
+    WHERE customer_state = 'RJ'
+    GROUP BY city, id, state
+),
+rank_clients AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY city ORDER BY revenue DESC) AS position
+    FROM revenue_per_customer
+) SELECT city, id, state, revenue, position
+    FROM rank_clients
+    WHERE position <= 3
+    ORDER BY city, position;
