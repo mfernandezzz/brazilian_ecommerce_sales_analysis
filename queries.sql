@@ -256,3 +256,14 @@ rank_products AS (
     FROM rank_products
     WHERE position <= 5
     ORDER BY payments, position ASC;
+
+-- A table with the city, quantity of clients and revenue for all the orders with six or less payments_installments during the Q2 2017
+SELECT customer.customer_city AS city, 
+    COUNT(customer.customer_id) AS customers, 
+    SUM(payments.payment_value) AS revenue
+FROM customer
+INNER JOIN orders ON customer.customer_id = orders.customer_id
+INNER JOIN payments ON orders.order_id = payments.order_id
+WHERE payments.payment_installments <= 6 AND (orders.order_purchase_timestamp BETWEEN '2017-04-01' AND '2017-07-01')
+GROUP BY city
+ORDER BY revenue DESC;  
