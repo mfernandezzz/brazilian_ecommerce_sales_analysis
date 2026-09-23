@@ -11,4 +11,10 @@ Una vez creada la base de datos, se realizan consultas a la misma para analizar 
 - Segmentación por ciudad, la cantidad de ordenes y la recaudación en base a las compras realizadas por los clientes en su respectiva ciudad,
 - Tendencia de ingresos anuales y mensuales para todo el periodo del que se tiene datos,
 - Obtener los productos con su respectiva cantidad de ordenes y ganancia total para un año especifico,
-- Cantidad total de ordenes de compra y ganancia de aquellos productos con un costo de envío mayor al promedio.
+- Cantidad total de ordenes de compra y ganancia de aquellos productos con un costo de envío mayor al promedio,
+- Los tipos de pago, los productos y la cantidad de ordenes por producto,
+- La cantidad de ordenes para cada producto en un día especifico,
+- Todos los productos con mas de 400 ordenes durante 2017,
+- Los tres clientes con mas dinero gastado por ciudad dentro del estado de Rio de Janeiro,
+- Los cinco productos con mas recaudación por cada medio de pago,
+- El nombre de la ciudad, recaudación y cantidad de clientes para todas las ventas realizadas en seis pagos o menos durante el segundo trimestre de 2017.
